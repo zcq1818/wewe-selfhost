@@ -1,6 +1,5 @@
-# 依赖与运行时产物（本地 npm install 可重建）
+# 依赖目录（本地 npm install 可重建）
 node_modules/
-package-lock.json
 
 # 生成的订阅源与临时文件
 feeds/
