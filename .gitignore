@@ -1,5 +1,9 @@
 # 依赖目录（本地 npm install 可重建）
 node_modules/
+packages/*/node_modules/
+
+# 内置 SDK 的编译产物（npm run build 可重建）
+packages/*/dist/
 
 # 生成的订阅源与临时文件
 feeds/

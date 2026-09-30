@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "完全自控的公众号转 RSS 脚本（基于 weread-omni SDK，不依赖任何第三方转发服务）",
+  "description": "完全自控的公众号转 RSS 工具（内置微信读书逆向 SDK，无第三方转发依赖）",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
+    "build": "npm run build --workspace weread-omni",
     "login": "node feeds.mjs login",
     "refresh": "node feeds.mjs refresh",
     "resolve": "node feeds.mjs resolve"
   },
   "dependencies": {
     "qrcode": "^1.5.4",
-    "weread-omni": "^0.1.2"
+    "weread-omni": "*"
   }
 }
