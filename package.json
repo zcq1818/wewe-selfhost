@@ -1,0 +1,16 @@
+{
+  "name": "wewe-selfhost",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "完全自控的公众号转 RSS 脚本（基于 weread-omni SDK，不依赖任何第三方转发服务）",
+  "scripts": {
+    "login": "node feeds.mjs login",
+    "refresh": "node feeds.mjs refresh",
+    "resolve": "node feeds.mjs resolve"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "weread-omni": "^0.1.2"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "accounts": [
+    "MP_WXS_2392014380"
+  ],
+  "urls": [],
+  "说明": "accounts 填公众号账号 ID（MP_WXS_xxx）；urls 填公众号任意一篇文章链接，脚本会自动解析出账号 ID。改完后运行 node feeds.mjs refresh。"
+}
