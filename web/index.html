@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拾光 RSS · 自托管公众号订阅</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --bg-2: #11141b;
+    --card: #161a22;
+    --card-2: #1b202a;
+    --line: #272d39;
+    --ink: #eae7dd;
+    --muted: #8e95a3;
+    --faint: #5b6270;
+    --amber: #e2a65a;
+    --amber-dim: #a97a3c;
+    --teal: #6fb3a5;
+    --danger: #d97b6c;
+    --serif: "Noto Serif SC", "Songti SC", serif;
+    --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(1100px 500px at 85% -10%, rgba(226,166,90,0.10), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(111,179,165,0.07), transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--amber); text-decoration: none; }
+
+  /* ---------- 顶部 ---------- */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(11,13,18,0.8);
+    backdrop-filter: blur(10px);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 {
+    font-family: var(--serif); font-weight: 900; font-size: 22px; letter-spacing: 1px;
+  }
+  .brand h1 em { font-style: normal; color: var(--amber); }
+  .brand .sub { color: var(--faint); font-size: 12px; font-family: var(--mono); letter-spacing: 2px; }
+  .status {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line);
+    font-size: 13px; color: var(--muted);
+  }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+  .status.on .dot { background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+  .status.on { color: var(--teal); border-color: rgba(111,179,165,0.4); }
+
+  main { max-width: 980px; margin: 0 auto; padding: 40px 28px 80px; }
+
+  /* ---------- 登录视图 ---------- */
+  .login-wrap { max-width: 420px; margin: 6vh auto 0; text-align: center; }
+  .login-wrap .lead {
+    font-family: var(--serif); font-size: 26px; font-weight: 700; line-height: 1.4;
+  }
+  .login-wrap .lead em { font-style: normal; color: var(--amber); }
+  .login-wrap .desc { color: var(--muted); margin: 12px 0 28px; font-size: 14px; }
+  .qr-box {
+    width: 240px; height: 240px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .qr-box img { width: 100%; height: 100%; object-fit: contain; }
+  .qr-box .placeholder { color: #999; font-size: 13px; padding: 20px; }
+  .login-state { margin-top: 22px; font-size: 14px; color: var(--muted); min-height: 22px; }
+  .login-state.err { color: var(--danger); }
+  .login-state.ok { color: var(--teal); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 22px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--card-2); color: var(--ink);
+    font-family: var(--sans); font-size: 14px; transition: all .15s ease;
+  }
+  .btn:hover { border-color: var(--amber-dim); transform: translateY(-1px); }
+  .btn.primary { background: var(--amber); border-color: var(--amber); color: #1a1408; font-weight: 700; }
+  .btn.primary:hover { background: #eeb76f; }
+  .btn.ghost { background: transparent; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  /* ---------- 仪表盘 ---------- */
+  .section-title {
+    font-family: var(--serif); font-size: 18px; font-weight: 700; margin: 34px 0 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::before { content: ""; width: 4px; height: 18px; background: var(--amber); border-radius: 2px; }
+  .section-title:first-child { margin-top: 0; }
+  .muted { color: var(--muted); }
+
+  .add-bar { display: flex; gap: 10px; margin-bottom: 22px; }
+  .add-bar input {
+    flex: 1; padding: 12px 16px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--card);
+    color: var(--ink); font-family: var(--mono); font-size: 13px; outline: none;
+  }
+  .add-bar input:focus { border-color: var(--amber-dim); }
+  .add-bar input::placeholder { color: var(--faint); font-family: var(--sans); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; transition: border-color .15s ease, transform .15s ease;
+  }
+  .card:hover { border-color: var(--amber-dim); transform: translateY(-2px); }
+  .card .mp-name { font-family: var(--serif); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .card .mp-id { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-bottom: 14px; word-break: break-all; }
+  .card .feed-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+  .card .feed-url { font-family: var(--mono); font-size: 11px; color: var(--muted); word-break: break-all; }
+  .copy { font-size: 11px; color: var(--teal); cursor: pointer; white-space: nowrap; background: none; border: none; }
+  .copy:hover { text-decoration: underline; }
+  .card .remove { margin-top: 14px; font-size: 12px; color: var(--faint); cursor: pointer; background: none; border: none; }
+  .card .remove:hover { color: var(--danger); }
+
+  .empty {
+    border: 1px dashed var(--line); border-radius: 14px; padding: 40px 20px;
+    text-align: center; color: var(--muted);
+  }
+  .feeds-list { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 6px 0; }
+  .feed-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item .name { font-family: var(--mono); font-size: 13px; }
+  .feed-item .url { color: var(--muted); font-family: var(--mono); font-size: 12px; word-break: break-all; }
+
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--card-2); border: 1px solid var(--line); color: var(--ink);
+    padding: 12px 20px; border-radius: 10px; font-size: 14px; opacity: 0;
+    transition: all .25s ease; pointer-events: none; z-index: 99;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .fade { animation: fadeUp .5s ease both; }
+  .pulse { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+  @media (max-width: 640px) {
+    main { padding: 24px 16px 60px; }
+    .add-bar { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>拾光<em>RSS</em></h1>
+    <span class="sub">自托管公众号订阅</span>
+  </div>
+  <div class="status" id="statusBadge"><span class="dot"></span><span id="statusText">检测中…</span></div>
+</header>
+
+<main>
+  <!-- 登录视图 -->
+  <section id="loginView" hidden>
+    <div class="login-wrap fade">
+      <div class="lead">把你的公众号<br>放回自己的<em>阅读器</em></div>
+      <div class="desc">微信扫码登录微信读书，登录态只保存在本机。</div>
+      <div class="qr-box" id="qrBox">
+        <div class="placeholder" id="qrPlaceholder">正在生成二维码…</div>
+      </div>
+      <div class="login-state" id="loginState"></div>
+      <button class="btn ghost" id="retryLogin" style="display:none">重新获取二维码</button>
+    </div>
+  </section>
+
+  <!-- 仪表盘视图 -->
+  <section id="dashboard" hidden>
+    <div class="section-title">添加订阅</div>
+    <div class="add-bar">
+      <input id="addInput" type="text" placeholder="粘贴公众号文章链接，或公众号 ID（MP_WXS_xxx）">
+      <button class="btn primary" id="addBtn">订阅</button>
+    </div>
+
+    <div class="section-title">已订阅公众号 <span class="muted" id="subCount"></span></div>
+    <div class="grid" id="subGrid"></div>
+
+    <div class="section-title" style="justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:10px">RSS 订阅源</span>
+      <button class="btn" id="refreshBtn">生成 RSS</button>
+    </div>
+    <div id="feedsWrap"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const api = async (path, opts = {}) => {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  return res.json();
+};
+const toast = (msg) => {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+};
+const copyText = async (text) => {
+  try { await navigator.clipboard.writeText(text); toast('已复制到剪贴板'); }
+  catch { toast('复制失败，请手动复制'); }
+};
+
+let loggedIn = false;
+let loginTimer = null;
+
+function setStatus(on, text) {
+  $('#statusBadge').classList.toggle('on', on);
+  $('#statusText').textContent = text;
+}
+
+// ---------- 登录 ----------
+const LOGIN_TEXT = {
+  waiting_qr: '正在生成二维码…',
+  ready: '请用手机微信扫码，并在手机上确认',
+  scanned: '已扫码，请在手机上点确认',
+  confirmed: '已确认，正在登录…',
+  success: '登录成功',
+  error: '',
+};
+
+async function startLogin() {
+  $('#qrBox').innerHTML = '<div class="placeholder pulse">正在生成二维码…</div>';
+  $('#loginState').textContent = '';
+  $('#loginState').className = 'login-state';
+  $('#retryLogin').style.display = 'none';
+  await api('/api/login/start', { method: 'POST' });
+  pollLogin();
+}
+
+async function pollLogin() {
+  const s = await api('/api/login/status');
+  if (s.status === 'ready' && s.qrDataUrl) {
+    $('#qrBox').innerHTML = `<img src="${s.qrDataUrl}" alt="登录二维码">`;
+    $('#loginState').textContent = LOGIN_TEXT.ready;
+  } else if (s.status === 'waiting_qr') {
+    // 二维码还没出来，继续等
+  } else if (s.status === 'scanned' || s.status === 'confirmed') {
+    $('#loginState').textContent = LOGIN_TEXT[s.status];
+  } else if (s.status === 'success') {
+    $('#loginState').textContent = LOGIN_TEXT.success;
+    $('#loginState').className = 'login-state ok';
+    clearInterval(loginTimer);
+    setTimeout(loadStatus, 600);
+    return;
+  } else if (s.status === 'error') {
+    $('#loginState').textContent = '登录失败：' + (s.error || '未知错误');
+    $('#loginState').className = 'login-state err';
+    $('#retryLogin').style.display = 'inline-flex';
+    clearInterval(loginTimer);
+    return;
+  }
+  loginTimer = setTimeout(pollLogin, 2000);
+}
+
+// ---------- 仪表盘 ----------
+async function loadStatus() {
+  const s = await api('/api/status');
+  loggedIn = s.loggedIn;
+  setStatus(loggedIn, loggedIn ? '已登录' : '未登录');
+  render(s);
+}
+
+function feedUrl(name) {
+  return `${location.origin}/feeds/${name}`;
+}
+
+function render(s) {
+  $('#loginView').hidden = loggedIn;
+  $('#dashboard').hidden = !loggedIn;
+  if (!loggedIn) {
+    startLogin();
+    return;
+  }
+  clearInterval(loginTimer);
+  renderSubs(s.subscriptions || []);
+  renderFeeds(s.feeds || []);
+}
+
+function renderSubs(subs) {
+  const grid = $('#subGrid');
+  $('#subCount').textContent = subs.length ? `（${subs.length}）` : '';
+  if (!subs.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">还没有订阅，粘贴一个公众号文章链接或 ID 开始吧。</div>';
+    return;
+  }
+  grid.innerHTML = subs.map((a, i) => `
+    <div class="card fade" style="animation-delay:${i * 60}ms">
+      <div class="mp-name">${esc(a.title || '未知公众号')}</div>
+      <div class="mp-id">${esc(a.accountId || '')}</div>
+      <div class="feed-row"><span class="feed-url">${feedUrl(a.accountId + '.rss')}</span><button class="copy" onclick="copyText('${feedUrl(a.accountId + '.rss')}')">复制</button></div>
+      <div class="feed-row"><span class="feed-url">${feedUrl(a.accountId + '.json')}</span><button class="copy" onclick="copyText('${feedUrl(a.accountId + '.json')}')">复制</button></div>
+      <button class="remove" onclick="removeSub('${esc(a.accountId)}')">取消订阅</button>
+    </div>
+  `).join('');
+}
+
+function renderFeeds(feeds) {
+  const w = $('#feedsWrap');
+  if (!feeds.length) {
+    w.innerHTML = '<div class="empty">还没有生成 RSS。点击右上角「生成 RSS」。</div>';
+    return;
+  }
+  w.innerHTML = `<div class="feeds-list fade">${feeds.map((f) => `
+    <div class="feed-item">
+      <span class="name">${esc(f.name)}</span>
+      <span class="url">${feedUrl(f.name)}</span>
+      <button class="copy" onclick="copyText('${feedUrl(f.name)}')">复制</button>
+    </div>`).join('')}</div>`;
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function removeSub(id) {
+  if (!confirm('取消订阅该公众号？')) return;
+  await api('/api/subscribe/' + encodeURIComponent(id), { method: 'DELETE' });
+  toast('已取消订阅');
+  loadStatus();
+}
+
+// ---------- 事件 ----------
+$('#retryLogin').addEventListener('click', startLogin);
+
+$('#addBtn').addEventListener('click', async () => {
+  const v = $('#addInput').value.trim();
+  if (!v) return toast('请输入文章链接或公众号 ID');
+  const body = v.startsWith('http') ? { url: v } : { accountId: v };
+  $('#addBtn').disabled = true;
+  try {
+    const r = await api('/api/subscribe', { method: 'POST', body: JSON.stringify(body) });
+    if (r.ok) { toast('订阅成功'); $('#addInput').value = ''; loadStatus(); }
+    else if (r.riskControl) toast('被风控拦截（-2041），请先养号');
+    else toast('订阅失败：' + (r.error || '未知错误'));
+  } catch (e) { toast('请求失败'); }
+  $('#addBtn').disabled = false;
+});
+
+$('#addInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#addBtn').click(); });
+
+$('#refreshBtn').addEventListener('click', async () => {
+  $('#refreshBtn').disabled = true;
+  $('#refreshBtn').textContent = '生成中…';
+  try {
+    const r = await api('/api/refresh', { method: 'POST' });
+    const fails = (r.results || []).filter((x) => !x.ok);
+    const risk = fails.filter((x) => x.riskControl).length;
+    if (risk > 0) toast(`完成，但 ${risk} 个因风控(-2041)失败，请先养号`);
+    else if (fails.length) toast(`部分失败（${fails.length} 个）`);
+    else toast('RSS 已生成');
+    loadStatus();
+  } catch (e) { toast('刷新失败'); }
+  $('#refreshBtn').disabled = false;
+  $('#refreshBtn').textContent = '生成 RSS';
+});
+
+loadStatus();
+</script>
+</body>
+</html>

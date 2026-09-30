@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "build": "npm run build --workspace weread-omni",
+    "start": "node server.mjs",
+    "web": "node server.mjs",
     "login": "node feeds.mjs login",
     "refresh": "node feeds.mjs refresh",
     "resolve": "node feeds.mjs resolve"
