@@ -21,16 +21,36 @@
     --amber-dim: #a97a3c;
     --teal: #6fb3a5;
     --danger: #d97b6c;
+    --glow-amber: rgba(226,166,90,0.10);
+    --glow-teal: rgba(111,179,165,0.07);
+    --header-bg: rgba(11,13,18,0.8);
     --serif: "Noto Serif SC", "Songti SC", serif;
     --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f0e6;
+    --bg-2: #ece5d7;
+    --card: #fffdf7;
+    --card-2: #f4ede0;
+    --line: #e3dac8;
+    --ink: #2a251e;
+    --muted: #7d7467;
+    --faint: #a89f8e;
+    --amber: #b97a2e;
+    --amber-dim: #9c671f;
+    --teal: #3d8a7b;
+    --danger: #c05642;
+    --glow-amber: rgba(185,122,46,0.10);
+    --glow-teal: rgba(61,138,123,0.07);
+    --header-bg: rgba(245,240,230,0.85);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     background:
-      radial-gradient(1100px 500px at 85% -10%, rgba(226,166,90,0.10), transparent 60%),
-      radial-gradient(900px 600px at -10% 110%, rgba(111,179,165,0.07), transparent 55%),
+      radial-gradient(1100px 500px at 85% -10%, var(--glow-amber), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, var(--glow-teal), transparent 55%),
       var(--bg);
     color: var(--ink);
     font-family: var(--sans);
@@ -46,7 +66,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 18px 28px;
     border-bottom: 1px solid var(--line);
-    background: rgba(11,13,18,0.8);
+    background: var(--header-bg);
     backdrop-filter: blur(10px);
   }
   .brand { display: flex; align-items: baseline; gap: 10px; }
@@ -63,6 +83,20 @@
   .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
   .status.on .dot { background: var(--teal); box-shadow: 0 0 10px var(--teal); }
   .status.on { color: var(--teal); border-color: rgba(111,179,165,0.4); }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .theme-toggle {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--card-2); border: 1px solid var(--line); color: var(--muted);
+    cursor: pointer; transition: color .15s ease, border-color .15s ease;
+  }
+  .theme-toggle:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .theme-toggle svg { width: 18px; height: 18px; }
+  .theme-toggle .icon-sun { display: block; }
+  .theme-toggle .icon-moon { display: none; }
+  :root[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+  :root[data-theme="light"] .theme-toggle .icon-moon { display: block; }
 
   main { max-width: 980px; margin: 0 auto; padding: 40px 28px 80px; }
 
@@ -108,7 +142,7 @@
   .refresh-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .risk-hint {
     font-size: 12px; color: var(--amber-dim);
-    border: 1px dashed rgba(226,166,90,0.4);
+    border: 1px dashed var(--amber-dim);
     padding: 4px 10px; border-radius: 8px; cursor: help;
     white-space: nowrap;
   }
@@ -175,7 +209,13 @@
     <h1>拾光<em>RSS</em></h1>
     <span class="sub">自托管公众号订阅</span>
   </div>
-  <div class="status" id="statusBadge"><span class="dot"></span><span id="statusText">检测中…</span></div>
+  <div class="header-right">
+    <button class="theme-toggle" id="themeToggle" title="切换明暗主题" aria-label="切换明暗主题">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
+    <div class="status" id="statusBadge"><span class="dot"></span><span id="statusText">检测中…</span></div>
+  </div>
 </header>
 
 <main>
@@ -387,6 +427,22 @@ $('#refreshBtn').addEventListener('click', async () => {
   $('#refreshBtn').disabled = false;
   $('#refreshBtn').textContent = '生成 RSS';
 });
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+}
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light' || saved === 'dark') applyTheme(saved);
+  else if (window.matchMedia('(prefers-color-scheme: light)').matches) applyTheme('light');
+  else applyTheme('dark');
+}
+$('#themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur === 'light' ? 'dark' : 'light');
+});
+initTheme();
 
 loadStatus();
 </script>
