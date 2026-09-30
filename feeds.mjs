@@ -13,6 +13,7 @@
  * 前置：手机微信读书账号需“养熟”。若 refresh 报 -2041（人机验证），
  *       说明账号/设备指纹被风控，先正常用几天微信读书（点开公众号文章）再试。
  */
+import { spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +29,22 @@ const CONFIG_PATH = join(__dirname, 'subscriptions.json');
 const FEEDS_DIR = join(__dirname, 'feeds');
 const QR_PATH = join(__dirname, 'login-qr.png');
 
+// 用系统默认看图工具直接弹出二维码图片
+function openFile(path) {
+  const commands = {
+    win32: ['cmd', ['/c', 'start', '', path]],
+    darwin: ['open', [path]],
+    linux: ['xdg-open', [path]],
+  };
+  const [cmd, args] = commands[process.platform] || commands.linux;
+  try {
+    spawn(cmd, args, { detached: true, stdio: 'ignore' }).unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function isRiskControl(err) {
   const msg = String(err?.message || err);
   return msg.includes('-2041') || msg.includes('human verification') || msg.includes('verification challenge');
@@ -40,8 +57,12 @@ async function login() {
     const result = await manager.login('default', {
       onQr: async (url) => {
         await QRCode.toFile(QR_PATH, url, { width: 480, margin: 2, errorCorrectionLevel: 'M' });
-        console.log('二维码已生成：' + QR_PATH);
-        console.log('请用手机微信扫码，并在手机上确认授权。');
+        if (openFile(QR_PATH)) {
+          console.log('二维码图片已自动弹出，请用手机微信扫码并确认授权。');
+        } else {
+          console.log('二维码已生成：' + QR_PATH + '（请手动打开）');
+          console.log('请用手机微信扫码，并在手机上确认授权。');
+        }
       },
       onStatus: async (status) => console.log('状态：' + status),
     });
